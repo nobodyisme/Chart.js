@@ -1366,16 +1366,23 @@ window.Chart = function(context, options){
 		
 		function drawBars(animPc){
 			ctx.lineWidth = config.barStrokeWidth;
+			var ni = 0;
 			for (var i=0; i<data.datasets.length; i++){
-					ctx.fillStyle = data.datasets[i].fillColor;
-					ctx.strokeStyle = data.datasets[i].strokeColor;
+				ctx.fillStyle = data.datasets[i].fillColor;
+				ctx.strokeStyle = data.datasets[i].strokeColor;
 				for (var j=0; j<data.datasets[i].data.length; j++){
-					var barOffset = yAxisPosX + config.barValueSpacing + valueHop*j + barWidth*i + config.barDatasetSpacing*i + config.barStrokeWidth*i;
+					var barOffset = yAxisPosX + config.barValueSpacing + valueHop*j + barWidth*ni + config.barDatasetSpacing*ni + config.barStrokeWidth*ni;
 					
+					if (data.datasets[i].data[j] == 0.0) {
+						/* TODO: check this */
+						continue;
+					}
 					ctx.beginPath();
 					ctx.moveTo(barOffset, xAxisPosY);
-					ctx.lineTo(barOffset, xAxisPosY - animPc*calculateOffset(data.datasets[i].data[j],calculatedScale,scaleHop)+(config.barStrokeWidth/2));
-					ctx.lineTo(barOffset + barWidth, xAxisPosY - animPc*calculateOffset(data.datasets[i].data[j],calculatedScale,scaleHop)+(config.barStrokeWidth/2));
+
+					var barYtop = xAxisPosY - animPc*calculateOffset(data.datasets[i].data[j],calculatedScale,scaleHop)+(config.barStrokeWidth/2);
+					ctx.lineTo(barOffset, barYtop);
+					ctx.lineTo(barOffset + barWidth, barYtop);
 					ctx.lineTo(barOffset + barWidth, xAxisPosY);
 					if(config.barShowStroke){
 						ctx.stroke();
@@ -1391,6 +1398,40 @@ window.Chart = function(context, options){
 							width = barWidth;
 						registerTooltip(ctx,{type:'rect',x:x,y:y,width:width,height:height},{label:data.labels[j],value:data.datasets[i].data[j]},'Bar');
 					}
+
+					if(data.datasets[i].labels && true /* check if label fits in */) {
+						ctx.save();
+
+						var fontSize = data.datasets[i].labelFontSize || config.labelFontSize || '12' +'px';
+						if(fontSize.match(/^[0-9]+$/g) != null) {
+							fontSize = fontSize+'px';
+						}
+						ctx.font = (config.labelFontStyle || 'normal')+ " " +fontSize+" " + (config.labelFontFamily || 'Arial');
+						ctx.fillStyle = getFadeColor(animPc, data.datasets[i].labelColor || 'black', data.datasets[i].color);
+						ctx.textBaseline = 'middle';
+						ctx.textAlign = data.datasets[i].labelAlign || config.labelAlign;
+
+						var nextBarYtop;
+						if (i < data.datasets.length - 1 && data.datasets[i].overlap) {
+							nextBarYtop = xAxisPosY - animPc*calculateOffset(data.datasets[i+1].data[j],calculatedScale,scaleHop)+(config.barStrokeWidth/2);
+						} else {
+							nextBarYtop = xAxisPosY;
+						}
+						var tX = barOffset + (barWidth / 2),
+							tY = (barYtop + nextBarYtop) / 2;
+
+						ctx.textAlign = 'center';
+
+						if ((nextBarYtop - barYtop) > (parseInt(fontSize) + 2)) {
+							ctx.fillText(data.datasets[i].labels[j], tX, tY);
+						}
+
+						ctx.restore();
+					}
+
+				}
+				if (!data.datasets[i].overlap) {
+					ni += 1;
 				}
 			}
 			
@@ -1480,8 +1521,15 @@ window.Chart = function(context, options){
 			}
 			xAxisLength = currentWidth() - longestText - widestXLabel;
 			valueHop = Math.floor(xAxisLength/(data.labels.length));	
+
+			var bar_count = 0;
+			for (id in data.datasets) {
+				if (!data.datasets[id].overlap) {
+					bar_count += 1;
+				}
+			}
+			barWidth = (valueHop - config.scaleGridLineWidth*2 - (config.barValueSpacing*2) - (config.barDatasetSpacing*bar_count -1) - ((config.barStrokeWidth/2)*bar_count-1))/bar_count;
 			
-			barWidth = (valueHop - config.scaleGridLineWidth*2 - (config.barValueSpacing*2) - (config.barDatasetSpacing*data.datasets.length-1) - ((config.barStrokeWidth/2)*data.datasets.length-1))/data.datasets.length;
 			yAxisPosX = currentWidth()-widestXLabel/2-xAxisLength;
 			xAxisPosY = scaleHeight + config.scaleFontSize/2;				
 		}		
