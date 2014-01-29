@@ -291,6 +291,10 @@ window.Chart = function(context, options){
 	var width = context.canvas.width,
 		height = context.canvas.height;
 
+	function currentWidth() {
+		return context.canvas.width;
+	}
+
 	this.savedState = null;
 
 	function getPosition(e) {
@@ -1396,8 +1400,8 @@ window.Chart = function(context, options){
 			ctx.lineWidth = config.scaleLineWidth;
 			ctx.strokeStyle = config.scaleLineColor;
 			ctx.beginPath();
-			ctx.moveTo(width-widestXLabel/2+5,xAxisPosY);
-			ctx.lineTo(width-(widestXLabel/2)-xAxisLength-5,xAxisPosY);
+			ctx.moveTo(currentWidth()-widestXLabel/2+5,xAxisPosY);
+			ctx.lineTo(currentWidth()-(widestXLabel/2)-xAxisLength-5,xAxisPosY);
 			ctx.stroke();
 			
 			
@@ -1474,12 +1478,11 @@ window.Chart = function(context, options){
 				//Add a little extra padding from the y axis
 				longestText +=10;
 			}
-			xAxisLength = width - longestText - widestXLabel;
+			xAxisLength = currentWidth() - longestText - widestXLabel;
 			valueHop = Math.floor(xAxisLength/(data.labels.length));	
 			
 			barWidth = (valueHop - config.scaleGridLineWidth*2 - (config.barValueSpacing*2) - (config.barDatasetSpacing*data.datasets.length-1) - ((config.barStrokeWidth/2)*data.datasets.length-1))/data.datasets.length;
-			
-			yAxisPosX = width-widestXLabel/2-xAxisLength;
+			yAxisPosX = currentWidth()-widestXLabel/2-xAxisLength;
 			xAxisPosY = scaleHeight + config.scaleFontSize/2;				
 		}		
 		function calculateDrawingSizes(){
@@ -1493,9 +1496,9 @@ window.Chart = function(context, options){
 				//If the text length is longer - make that equal to longest text!
 				widestXLabel = (textLength > widestXLabel)? textLength : widestXLabel;
 			}
-			if (width/data.labels.length < widestXLabel){
+			if (currentWidth()/data.labels.length < widestXLabel){
 				rotateLabels = 45;
-				if (width/data.labels.length < Math.cos(rotateLabels) * widestXLabel){
+				if (currentWidth()/data.labels.length < Math.cos(rotateLabels) * widestXLabel){
 					rotateLabels = 90;
 					maxSize -= widestXLabel; 
 				}
